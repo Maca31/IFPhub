@@ -23,12 +23,30 @@ import {
 import { Separator } from "@/app/frontend/components/ui/separator";
 import AuthGuard from "@/app/frontend/components/AuthGuard";
 
-async function getNoticias() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/noticias`, {
-    cache: "no-store",
-  });
+import { createClient } from "@/app/backend/utils/supabase/server";
 
-  return await res.json();
+async function getNoticias() {
+  try {
+    const supabase = await createClient();
+
+    // Verificamos si las variables de entorno están presentes
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("Faltan variables de entorno de Supabase en Vercel");
+      return [];
+    }
+
+    const { data, error } = await supabase.rpc("fn_get_noticia");
+
+    if (error) {
+      console.error("Error al obtener noticias:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Error fatal en getNoticias:", err);
+    return [];
+  }
 }
 
 export default async function Page(props: { searchParams: Promise<any> }) {
@@ -48,7 +66,7 @@ export default async function Page(props: { searchParams: Promise<any> }) {
     }
     return a;
   };
-  
+
   const randomNoticias = shuffle(noticiasArray).slice(0, 8);
 
   const getPicsum = (seed: string | number, w: number, h: number) =>
@@ -105,7 +123,7 @@ export default async function Page(props: { searchParams: Promise<any> }) {
                   <div className="grid gap-4">
                     {randomNoticias.slice(0, 3).map((n: any, idx: number) => (
                       <Link key={n.id_noticia} href={`/detail/${n.id_noticia}?uid=${uid}&sig=${sig}`}>
-                        <article 
+                        <article
                           className="group flex gap-4 items-center p-4 rounded-lg bg-white border border-[#eef3f6] hover:border-accent/30 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
                           style={{ animationDelay: `${idx * 100}ms` }}
                         >
@@ -139,11 +157,11 @@ export default async function Page(props: { searchParams: Promise<any> }) {
                       Más noticias
                     </h3>
                   </div>
-                  
+
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     {randomNoticias.slice(0, 4).map((n: any, idx: number) => (
                       <Link key={n.id_noticia} href={`/detail/${n.id_noticia}?uid=${uid}&sig=${sig}`}>
-                        <div 
+                        <div
                           className="group bg-white rounded-xl p-0 border border-[#eef3f6] hover:border-accent/30 hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-2"
                           style={{ animationDelay: `${idx * 100}ms` }}
                         >

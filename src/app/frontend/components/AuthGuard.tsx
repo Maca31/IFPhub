@@ -20,7 +20,9 @@ export default function AuthGuard({
 
     // 🚫 No logeado → fuera
     if (!storedUid || !storedSig) {
-      router.replace("/");
+      if (pathname !== "/") {
+        router.replace("/");
+      }
       return;
     }
 
@@ -30,8 +32,8 @@ export default function AuthGuard({
     // 🔁 Añadir / corregir params en la URL
     if (urlUid !== storedUid || urlSig !== storedSig) {
       const params = new URLSearchParams(searchParams.toString());
-      params.set("uid", storedUid);
-      params.set("sig", storedSig);
+      params.set("uid", storedUid || "guest");
+      params.set("sig", storedSig || "guest");
 
       router.replace(`${pathname}?${params.toString()}`);
       return; // ⛔ esperamos al siguiente render
